@@ -8,3 +8,6 @@ coverage/
 
 backend/storage/
 backend/uploads/
+
+backend/eng.traineddata
+backend/*.traineddata
