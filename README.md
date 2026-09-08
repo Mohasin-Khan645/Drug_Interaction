@@ -60,6 +60,12 @@ cp backend/.env.example backend/.env
 docker compose up --build
 ```
 
+## Continuous integration
+
+The GitHub Actions pipeline (install, `prisma generate`, `prisma validate`, lint, tests against a
+PostgreSQL service, Docker build) lives at `ci/github-actions-ci.yml`. Copy it to
+`.github/workflows/ci.yml` to activate it — Devin's GitHub app cannot write workflow files.
+
 ## Environment variables
 
 | Variable | Purpose |
