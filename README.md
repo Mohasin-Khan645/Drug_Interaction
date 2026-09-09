@@ -1,4 +1,4 @@
-# DRUGSAFE — Medication Safety & Drug Interaction Intelligence Backend
+# DRUGSAFE — Medication Safety & Drug Interaction Intelligence Platform
 
 > **Clinical decision support only.** DRUGSAFE surfaces deterministic, curated safety findings for
 > qualified clinicians. It does not diagnose, prescribe, change dosages, or discontinue therapy, and
@@ -24,6 +24,7 @@ notifications, PDF reports, grounded AI explanations, administration and audit l
 ## Layout
 
 ```
+frontend/                  React + Vite interface (see frontend/README.md)
 backend/
   prisma/schema.prisma     data model and indexes
   prisma/seed.js           demo users, drugs, rules and one demo patient

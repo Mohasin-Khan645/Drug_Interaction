@@ -6,8 +6,9 @@ const SORT_FIELDS = z.enum(['genericName', 'brandName', 'createdAt']);
 
 const list = {
   query: pagination.extend({
-    classId: z.string().uuid().optional(),
-    ingredientId: z.string().uuid().optional(),
+    drugClassId: z.string().uuid().optional(),
+    route: z.string().max(80).optional(),
+    dosageForm: z.string().max(80).optional(),
     sortBy: SORT_FIELDS.optional(),
     sortOrder: z.enum(['asc', 'desc']).optional(),
   }),
@@ -16,7 +17,6 @@ const list = {
 const search = {
   query: pagination.extend({
     q: z.string().min(2).max(120),
-    classId: z.string().uuid().optional(),
     sortBy: SORT_FIELDS.optional(),
     sortOrder: z.enum(['asc', 'desc']).optional(),
   }),
