@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-50: 236 254 255;
+    --brand-100: 207 250 254;
+    --brand-200: 165 243 252;
+    --brand-400: 45 178 196;
+    --brand-500: 14 148 172;
+    --brand-600: 8 121 145;
+    --brand-700: 12 96 116;
+    --brand-900: 13 60 76;
+
+    --canvas: 246 248 250;
+    --surface: 255 255 255;
+    --line: 226 232 240;
+    --ink: 15 23 42;
+    --ink-muted: 71 85 105;
+    --ink-subtle: 148 163 184;
+
+    --critical: 159 18 57;
+    --danger: 220 38 38;
+    --warning: 202 138 4;
+    --success: 21 128 61;
+    --info: 71 85 105;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-surface;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-line bg-surface shadow-card;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-ink;
+  }
+
+  .hint {
+    @apply text-xs text-ink-muted;
+  }
+
+  .section-title {
+    @apply text-sm font-semibold uppercase tracking-wide text-ink-muted;
+  }
+}
+
+.skeleton {
+  @apply animate-pulse rounded bg-slate-200;
+}
