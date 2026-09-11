@@ -1,0 +1,615 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  PATIENT
+  DOCTOR
+  PHARMACIST
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          UserRole       @default(PATIENT)
+  status        AccountStatus  @default(ACTIVE)
+  emailVerified Boolean        @default(false)
+  department    String?
+  licenseNumber String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  refreshTokens    RefreshToken[]
+  patient          Patient?
+  doctorProfile    DoctorProfile?
+  pharmacistProfile PharmacistProfile?
+  adminProfile     AdminProfile?
+  primaryPatients  Patient[]          @relation("DoctorPatients")
+  clinicianReviews ClinicianReview[]
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+  safetyChecks     SafetyCheck[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model DoctorProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  specialty           String
+  licenseNumber       String
+  npiNumber           String?
+  deaNumber           String?
+  hospitalAffiliation String?
+  phone               String?
+  officeLocation      String?
+  consultationHours   String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([specialty])
+  @@map("doctor_profiles")
+}
+
+model PharmacistProfile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  licenseNumber String
+  licenseState  String?
+  pharmacyName  String?
+  pharmacyNpi   String?
+  workShift     String?
+  phone         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("pharmacist_profiles")
+}
+
+model AdminProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  adminLevel     String   @default("CLINICAL_ADMIN") // SUPER_ADMIN, CLINICAL_ADMIN, SUPPORT_ADMIN
+  department     String?
+  employeeId     String?
+  canAudit       Boolean  @default(true)
+  canManageUsers Boolean  @default(true)
+  canManageRules Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admin_profiles")
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Patient {
+  id               String              @id @default(uuid())
+  userId           String?             @unique
+  mrn              String              @unique
+  dateOfBirth      DateTime?
+  age              Int?
+  gender           String?
+  bloodGroup       String?
+  heightCm         Float?
+  weightKg         Float?
+  phone            String?
+  emergencyContact String?
+  primaryDoctor    String?
+  primaryDoctorId  String?
+  medicalHistory   String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  user             User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  doctor           User?               @relation("DoctorPatients", fields: [primaryDoctorId], references: [id], onDelete: SetNull)
+  conditions       PatientCondition[]
+  allergies        PatientAllergy[]
+  medications      PatientMedication[]
+  labResults       LabResult[]
+  safetyChecks     SafetyCheck[]
+  prescriptions    Prescription[]
+  safetyReports    SafetyReport[]
+
+  @@index([primaryDoctorId])
+  @@map("patients")
+}
+
+model PatientCondition {
+  id            String    @id @default(uuid())
+  patientId     String
+  conditionName String
+  icd10Code     String?
+  status        String    @default("Active")
+  diagnosedDate DateTime?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  patient       Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@map("patient_conditions")
+}
+
+model PatientAllergy {
+  id            String    @id @default(uuid())
+  patientId     String
+  allergen      String
+  reaction      String
+  severity      String
+  diagnosedDate DateTime?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  patient       Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@map("patient_allergies")
+}
+
+model PatientMedication {
+  id                String    @id @default(uuid())
+  patientId         String
+  drugId            String?
+  medicationName    String
+  genericName       String?
+  strength          String
+  doseForm          String
+  route             String
+  frequency         String
+  source            String    @default("Prescription")
+  status            String    @default("Active")
+  startDate         DateTime?
+  endDate           DateTime?
+  prescribingDoctor String?
+  rxNormCode        String?
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  drug              Drug?     @relation(fields: [drugId], references: [id], onDelete: SetNull)
+
+  @@index([patientId])
+  @@map("patient_medications")
+}
+
+model LabResult {
+  id             String    @id @default(uuid())
+  patientId      String
+  testName       String
+  value          String
+  unit           String
+  referenceRange String?
+  interpretation String?
+  testDate       DateTime
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  patient        Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@map("lab_results")
+}
+
+model Drug {
+  id               String            @id @default(uuid())
+  genericName      String
+  brandName        String
+  description      String?
+  drugClass        String
+  activeIngredient String
+  dosageForm       String
+  route            String
+  strength         String
+  rxNormCode       String?
+  atcCode          String?
+  blackBoxWarning  Boolean           @default(false)
+  status           String            @default("ACTIVE")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  aliases          DrugAlias[]
+  identifiers      DrugIdentifier[]
+  interactionsA    DrugInteraction[] @relation("DrugAInteractions")
+  interactionsB    DrugInteraction[] @relation("DrugBInteractions")
+  diseaseRules     DrugDiseaseRule[]
+  allergyRules     DrugAllergyRule[]
+  medications      PatientMedication[]
+
+  @@index([genericName])
+  @@index([brandName])
+  @@map("drugs")
+}
+
+model DrugAlias {
+  id        String   @id @default(uuid())
+  drugId    String
+  alias     String
+  type      String   @default("BRAND")
+  createdAt DateTime @default(now())
+
+  drug      Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
+
+  @@index([alias])
+  @@index([drugId])
+  @@map("drug_aliases")
+}
+
+model DrugIdentifier {
+  id        String   @id @default(uuid())
+  drugId    String
+  type      String
+  value     String
+  createdAt DateTime @default(now())
+
+  drug      Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
+
+  @@index([value])
+  @@index([drugId])
+  @@map("drug_identifiers")
+}
+
+model DrugInteraction {
+  id              String    @id @default(uuid())
+  drugAId         String
+  drugBId         String
+  severity        String
+  title           String
+  interactionType String    @default("DRUG_DRUG")
+  clinicalEffect  String
+  mechanism       String
+  management      String
+  evidenceLevel   String
+  sourceId        String?
+  version         Int       @default(1)
+  status          String    @default("ACTIVE")
+  reviewedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  drugA           Drug      @relation("DrugAInteractions", fields: [drugAId], references: [id], onDelete: Cascade)
+  drugB           Drug      @relation("DrugBInteractions", fields: [drugBId], references: [id], onDelete: Cascade)
+
+  @@unique([drugAId, drugBId])
+  @@index([drugAId])
+  @@index([drugBId])
+  @@map("drug_interactions")
+}
+
+model DrugDiseaseRule {
+  id             String    @id @default(uuid())
+  drugId         String?
+  diseaseId      String?
+  diseaseName    String
+  ruleType       String    @default("CONTRAINDICATION")
+  severity       String
+  title          String
+  description    String
+  clinicalEffect String?
+  mechanism      String?
+  management     String
+  evidenceLevel  String
+  sourceId       String?
+  version        Int       @default(1)
+  status         String    @default("ACTIVE")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  drug           Drug?     @relation(fields: [drugId], references: [id], onDelete: SetNull)
+
+  @@index([diseaseName])
+  @@index([drugId])
+  @@map("drug_disease_rules")
+}
+
+model DrugAllergyRule {
+  id             String    @id @default(uuid())
+  drugId         String?
+  allergenName   String
+  drugClass      String?
+  severity       String
+  title          String
+  description    String
+  clinicalEffect String?
+  mechanism      String?
+  management     String
+  evidenceLevel  String
+  sourceId       String?
+  version        Int       @default(1)
+  status         String    @default("ACTIVE")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  drug           Drug?     @relation(fields: [drugId], references: [id], onDelete: SetNull)
+
+  @@index([allergenName])
+  @@index([drugId])
+  @@map("drug_allergy_rules")
+}
+
+model DuplicationRule {
+  id               String   @id @default(uuid())
+  drugClass        String?
+  activeIngredient String?
+  severity         String
+  title            String
+  description      String
+  management       String
+  maxDailyDoseMg   Float?
+  status           String   @default("ACTIVE")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([activeIngredient])
+  @@index([drugClass])
+  @@map("duplication_rules")
+}
+
+model PatientFactorRule {
+  id                String   @id @default(uuid())
+  drugId            String?
+  factorType        String
+  conditionOperator String
+  thresholdValue    Float?
+  severity          String
+  title             String
+  description       String
+  management        String
+  status            String   @default("ACTIVE")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([factorType])
+  @@map("patient_factor_rules")
+}
+
+model SafetyCheck {
+  id                  String          @id @default(uuid())
+  patientId           String?
+  evaluatedMedications String
+  overallSafetyStatus String
+  totalFindings       Int
+  checkedByUserId     String?
+  createdAt           DateTime        @default(now())
+
+  patient             Patient?        @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  checkedByUser       User?           @relation(fields: [checkedByUserId], references: [id], onDelete: SetNull)
+  findings            SafetyFinding[]
+  reports             SafetyReport[]
+
+  @@index([patientId])
+  @@map("safety_checks")
+}
+
+model SafetyFinding {
+  id             String            @id @default(uuid())
+  safetyCheckId  String
+  category       String
+  severity       String
+  title          String
+  affectedDrugs  String
+  clinicalEffect String
+  mechanism      String
+  management     String
+  recommendation String?
+  evidence       String?
+  evidenceLevel  String?
+  source         String?
+  status         String            @default("OPEN")
+  createdAt      DateTime          @default(now())
+
+  safetyCheck    SafetyCheck       @relation(fields: [safetyCheckId], references: [id], onDelete: Cascade)
+  clinicianReviews ClinicianReview[]
+  evidenceRefs   FindingEvidence[]
+
+  @@index([safetyCheckId])
+  @@map("safety_findings")
+}
+
+model ClinicianReview {
+  id                     String        @id @default(uuid())
+  findingId              String
+  reviewerId             String
+  decision               String
+  clinicalNote           String
+  recommendationOverride Boolean       @default(false)
+  notifyPrescriber       Boolean       @default(false)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  finding                SafetyFinding @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  reviewer               User          @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@index([findingId])
+  @@index([reviewerId])
+  @@map("clinician_reviews")
+}
+
+model KnowledgeSource {
+  id          String              @id @default(uuid())
+  sourceName  String              @unique
+  type        String
+  summary     String
+  url         String?
+  version     String
+  lastUpdated DateTime
+  status      String              @default("ACTIVE")
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  documents   KnowledgeDocument[]
+  evidence    FindingEvidence[]
+
+  @@map("knowledge_sources")
+}
+
+model KnowledgeDocument {
+  id          String          @id @default(uuid())
+  sourceId    String
+  title       String
+  content     String
+  metadata    String?
+  version     String
+  retrievedAt DateTime
+  reviewedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  source      KnowledgeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId])
+  @@map("knowledge_documents")
+}
+
+model FindingEvidence {
+  id              String           @id @default(uuid())
+  findingId       String
+  sourceId        String?
+  documentTitle   String?
+  referenceUrl    String?
+  evidenceSnippet String
+  evidenceLevel   String
+  createdAt       DateTime         @default(now())
+
+  finding         SafetyFinding    @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  source          KnowledgeSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  @@index([findingId])
+  @@map("finding_evidence")
+}
+
+model Prescription {
+  id          String             @id @default(uuid())
+  patientId   String
+  fileName    String
+  fileUrl     String
+  mimeType    String
+  fileSize    Int
+  status      String             @default("PENDING_OCR")
+  ocrRawText  String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  patient     Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  items       PrescriptionItem[]
+
+  @@index([patientId])
+  @@map("prescriptions")
+}
+
+model PrescriptionItem {
+  id              String       @id @default(uuid())
+  prescriptionId  String
+  detectedName    String
+  normalizedName  String?
+  genericName     String?
+  strength        String?
+  form            String?
+  route           String?
+  frequency       String?
+  confidenceScore Float?
+  rxNormCode      String?
+  status          String       @default("NEEDS_VERIFICATION")
+  flagWarning     String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  prescription    Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  @@index([prescriptionId])
+  @@map("prescription_items")
+}
+
+model Notification {
+  id           String    @id @default(uuid())
+  userId       String
+  patientId    String?
+  type         String
+  severity     String
+  title        String
+  message      String
+  resourceType String?
+  resourceId   String?
+  status       String    @default("UNREAD")
+  readAt       DateTime?
+  createdAt    DateTime  @default(now())
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+model SafetyReport {
+  id            String      @id @default(uuid())
+  patientId     String?
+  safetyCheckId String
+  reportNumber  String      @unique
+  status        String      @default("GENERATED")
+  createdBy     String?
+  createdAt     DateTime    @default(now())
+
+  patient       Patient?    @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  safetyCheck   SafetyCheck @relation(fields: [safetyCheckId], references: [id], onDelete: Cascade)
+
+  @@index([safetyCheckId])
+  @@index([patientId])
+  @@map("safety_reports")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  action       String
+  resourceType String
+  resourceId   String?
+  metadata     String?
+  ipAddress    String?
+  userAgent    String?
+  status       String   @default("SUCCESS")
+  createdAt    DateTime @default(now())
+
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+

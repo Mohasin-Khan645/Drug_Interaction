@@ -1,0 +1,34 @@
+export const AccountStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  SUSPENDED: 'SUSPENDED',
+};
+
+export const FindingStatus = {
+  OPEN: 'OPEN',
+  ACKNOWLEDGED: 'ACKNOWLEDGED',
+  REVIEW_REQUIRED: 'REVIEW_REQUIRED',
+  ACCEPTED: 'ACCEPTED',
+  RESOLVED: 'RESOLVED',
+};
+
+export const ReviewDecision = {
+  ACCEPTED: 'ACCEPTED',
+  ACKNOWLEDGED: 'ACKNOWLEDGED',
+  OVERRIDDEN: 'OVERRIDDEN',
+  REQUIRES_INVESTIGATION: 'REQUIRES_INVESTIGATION',
+};
+
+export const NotificationStatus = {
+  UNREAD: 'UNREAD',
+  READ: 'READ',
+  ARCHIVED: 'ARCHIVED',
+};
+
+export const PrescriptionStatus = {
+  PENDING_OCR: 'PENDING_OCR',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+};
+

@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: 15 118 110;
+    --color-primary-dark: 17 94 89;
+  }
+
+  body {
+    @apply text-slate-800 bg-slate-50 font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Accessible focus indicators */
+  :focus-visible {
+    @apply outline-none ring-2 ring-teal-600 ring-offset-2;
+  }
+}
+
+/* Custom scrollbars for clean medical UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* 3D Medical & Clinical Glassmorphism Utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 12px 30px -8px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.glass-hud-dark {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(4, 47, 46, 0.92) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(45, 212, 191, 0.25);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.card-3d {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+  transform-style: preserve-3d;
+}
+
+.card-3d:hover {
+  transform: translateY(-4px) scale(1.008);
+  box-shadow: 0 20px 32px -8px rgba(13, 148, 136, 0.16), 0 8px 16px -4px rgba(15, 23, 42, 0.06);
+}
+
+.glow-halo-teal {
+  box-shadow: 0 0 25px -4px rgba(20, 184, 166, 0.35);
+}
+
+.glow-halo-rose {
+  box-shadow: 0 0 25px -4px rgba(244, 63, 94, 0.4);
+}
+
+.glow-halo-amber {
+  box-shadow: 0 0 25px -4px rgba(245, 158, 11, 0.35);
+}
+
+/* EKG Telemetry Pulse Line Animation */
+@keyframes ekgSweep {
+  0% {
+    stroke-dashoffset: 600;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.ekg-wave {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 0;
+  animation: ekgSweep 4s linear infinite;
+}
+
+/* Real-Time AI Blinking Cursor */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.ai-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  background-color: #14b8a6;
+  margin-left: 3px;
+  vertical-align: middle;
+  border-radius: 2px;
+  animation: blink 0.8s infinite;
+}
+
+/* Print Styles for Clinical Safety PDF Reports */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+  
+  .break-before {
+    page-break-before: always;
+  }
+
+  .avoid-break {
+    page-break-inside: avoid;
+  }
+}
